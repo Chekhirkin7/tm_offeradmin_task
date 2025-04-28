@@ -3,9 +3,9 @@ from uuid import UUID
 from litestar import Litestar, get, Router
 from litestar.openapi import OpenAPIConfig
 from sqlalchemy import select
-from schemas import OfferWallBase
-from models import OfferChoices, OfferWall
-from db import sessionmanager
+from .schemas import OfferWallBase
+from .models import OfferChoices, OfferWall
+from .db import sessionmanager
 from urllib.parse import urlparse
 import logging
 
@@ -21,13 +21,16 @@ def normalize_url(url: str) -> str:
 
 
 @get("/offerwalls/{token:uuid}", response_model=OfferWallBase)
-async def get_offerwall(token: UUID) -> OfferWallBase:
+async def get_offerwall(token: UUID) -> OfferWallBase | tuple[Dict, int]:
     try:
         async with sessionmanager.session() as session:
             async with session.begin():
                 stmt = select(OfferWall).filter(OfferWall.token == token)
                 result = await session.execute(stmt)
                 offerwall = result.scalar_one_or_none()
+                if not offerwall:
+                    logging.error(f"OfferWall with token {token} not found.")
+                    return {"error": "OfferWall not found"}, 404
 
                 offerwall_data = {
                     "token": offerwall.token,
@@ -35,12 +38,11 @@ async def get_offerwall(token: UUID) -> OfferWallBase:
                     "url": offerwall.url,
                     "description": offerwall.description,
                 }
-        if not offerwall:
-            logging.error(f"OfferWall with token {token} not found.")
-            return {"error": "OfferWall not found"}, 404
-        return offerwall_data
+
+                return OfferWallBase(**offerwall_data)
     except Exception as e:
         logging.error(f"Error occurred: {e}")
+        print(f"Error occurred: {e}")
         return {"error": "Internal server error"}, 500
 
 

@@ -14,4 +14,4 @@ RUN pip install --upgrade pip
 RUN pip install -r /app/requirements.txt
 
 # Вказуємо команду, яка запускає ваш застосунок
-CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "main:app"]
+CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "main:app", "--port", "7000"]

@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 from enum import Enum
+
 from sqlalchemy import (
     String,
     ForeignKey,
@@ -9,13 +10,11 @@ from sqlalchemy import (
     UniqueConstraint,
     Boolean,
     Integer,
-    func,
     UUID,
-    select,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.ext.asyncio import AsyncSession
-from db import sessionmanager
+
+from .db import sessionmanager
 
 
 class Base(DeclarativeBase):
@@ -62,7 +61,7 @@ class OfferChoices(Enum):
 
 
 class OfferWall(Base):
-    __tablename__ = "offerwall"
+    __tablename__ = "admin_panel_offerwall"
 
     token: Mapped[UUID] = mapped_column(
         UUID, primary_key=True, default=uuid.uuid4, unique=True
@@ -81,49 +80,9 @@ class OfferWall(Base):
     def __str__(self):
         return f"OfferWall {self.token}"
 
-    async def add_offer(self, offer, db: AsyncSession, order=None):
-        if order is None:
-            result = await db.execute(
-                select(func.max(OfferWallOffer.order)).where(
-                    OfferWallOffer.offer_wall_id == self.token
-                )
-            )
-            max_order = result.scalar_one_or_none() or 0
-            order = max_order + 1
-
-        new_offer = OfferWallOffer(
-            offer_wall_id=self.token,
-            offer_id=offer.uuid,
-            order=order,
-        )
-
-        db.add(new_offer)
-        await db.commit()
-
-    async def reorder_offers(self, offer_order_list: list, db: AsyncSession):
-        for index, offer_uuid in enumerate(offer_order_list):
-            await db.execute(
-                OfferWallOffer.__table__.update()
-                .where(
-                    (OfferWallOffer.offer_wall_id == self.token)
-                    & (OfferWallOffer.offer_id == offer_uuid)
-                )
-                .values(order=index)
-            )
-        await db.commit()
-
-    async def get_offers(self, db: AsyncSession):
-        result = await db.execute(
-            select(OfferWallOffer)
-            .where(OfferWallOffer.offer_wall_id == self.token)
-            .order_by(OfferWallOffer.order)
-        )
-        offer_assignments = result.scalars().all()
-        return [assignment.offer_rel for assignment in offer_assignments]
-
 
 class Offer(Base):
-    __tablename__ = "offer"
+    __tablename__ = "admin_panel_offer"
 
     uuid: Mapped[UUID] = mapped_column(
         UUID, primary_key=True, default=uuid.uuid4, unique=True
@@ -151,13 +110,15 @@ class Offer(Base):
 
 
 class OfferWallOffer(Base):
-    __tablename__ = "offerwalloffer"
+    __tablename__ = "admin_panel_offerwalloffer"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
-    offer_id: Mapped[UUID] = mapped_column(ForeignKey("offer.uuid", ondelete="CASCADE"))
+    offer_id: Mapped[UUID] = mapped_column(
+        ForeignKey("admin_panel_offer.uuid", ondelete="CASCADE")
+    )
     offer_wall_id: Mapped[UUID] = mapped_column(
-        ForeignKey("offerwall.token", ondelete="CASCADE")
+        ForeignKey("admin_panel_offerwall.token", ondelete="CASCADE")
     )
 
     offer_wall_rel: Mapped["OfferWall"] = relationship(
@@ -174,13 +135,15 @@ class OfferWallOffer(Base):
 
 
 class OfferWallPopupOffer(Base):
-    __tablename__ = "offerwallpopupoffer"
+    __tablename__ = "admin_panel_offerwallpopupoffer"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
-    offer_id: Mapped[UUID] = mapped_column(ForeignKey("offer.uuid", ondelete="CASCADE"))
+    offer_id: Mapped[UUID] = mapped_column(
+        ForeignKey("admin_panel_offer.uuid", ondelete="CASCADE")
+    )
     offer_wall_id: Mapped[UUID] = mapped_column(
-        ForeignKey("offerwall.token", ondelete="CASCADE")
+        ForeignKey("admin_panel_offerwall.token", ondelete="CASCADE")
     )
 
     offer_wall_rel: Mapped["OfferWall"] = relationship(
