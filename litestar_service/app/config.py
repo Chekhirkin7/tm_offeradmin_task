@@ -1,29 +1,31 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
 
 
 class Settings(BaseSettings):
+    # Прибрав Field(..., env=""), так як воно автоматом підтягується
+
     # For local
-    DB_HOST: str = Field(..., env="DB_HOST")
-    DB_NAME: str = Field(..., env="DB_NAME")
-    DB_USER: str = Field(..., env="DB_USER")
-    DB_PASSWORD: str = Field(..., env="DB_PASSWORD")
-    DB_PORT: int = Field(..., env="DB_PORT")
+    DB_HOST: str
+    DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_PORT: int
 
     # For Docker development
-    DB_NAME_DEV: str = Field(..., env="DB_NAME_DEV")
-    DB_USER_DEV: str = Field(..., env="DB_USER_DEV")
-    DB_PASSWORD_DEV: str = Field(..., env="DB_PASSWORD_DEV")
-    DB_HOST_DEV: str = Field(..., env="DB_HOST_DEV")
-    DB_PORT_DEV: int = Field(..., env="DB_PORT_DEV")
+    DB_NAME_DEV: str
+    DB_USER_DEV: str
+    DB_PASSWORD_DEV: str
+    DB_HOST_DEV: str
+    DB_PORT_DEV: int
 
-    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    # SECRET_KEY: str = Field(..., env="SECRET_KEY") # Secret key використовується тільки Django
 
     # DEBUG flag to decide which DB to connect to
-    DEBUG: int = Field(..., env="DEBUG")
+    DEBUG: bool  # Автоматично конвертує 1 в True та 0 в False
 
     class Config:
-        env_file = ".env"
+        # env_file = "../.env"
+        extra = "ignore"  # ігноруємо невідомі параметри
 
 
 settings = Settings()

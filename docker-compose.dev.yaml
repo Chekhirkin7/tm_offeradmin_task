@@ -47,3 +47,19 @@ services:
     depends_on:
       - admin_panel
     restart: unless-stopped
+
+  litestar:
+    build: ./litestar_service
+    container_name: litestar
+    volumes:
+      - ./litestar_service/app:/app
+      - ./.env:/app/.env
+    ports:
+      - '7000:7000'
+    env_file:
+      - ./.env
+    environment:
+      - DEBUG=1
+    depends_on:
+      - postgres
+    restart: unless-stopped

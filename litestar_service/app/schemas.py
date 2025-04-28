@@ -1,7 +1,7 @@
 from uuid import UUID
 from pydantic import BaseModel
 from typing import Optional
-from models import OfferChoices
+from .models import OfferChoices
 
 
 class OfferBase(BaseModel):
